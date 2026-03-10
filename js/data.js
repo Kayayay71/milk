@@ -100,20 +100,32 @@
         +     '</div>'
         +   '</div>'
 
-        /* 危险操作 */
+        /* 危险操作 - 改为全宽按钮卡片，移动端友好 */
         +   '<div class="dm-section-label danger-label"><i class="fas fa-triangle-exclamation"></i> 危险操作</div>'
-        +   '<div class="dm-row-card">'
-        +     '<div class="dm-row-item">'
-        +       '<div class="dm-row-icon red"><i class="fas fa-trash-alt"></i></div>'
-        +       '<div class="dm-row-info"><div class="dm-row-title">重置全部数据</div><div class="dm-row-desc">清空所有本地数据，不可撤销</div></div>'
-        +       '<button class="dm-danger-btn" id="clear-storage"><i class="fas fa-rotate-right"></i> 重置</button>'
-        +     '</div>'
+        +   '<div class="dm-danger-cards dm-danger-cards-row">'
+        +     '<button class="dm-danger-card dm-danger-card-orange dm-danger-card-half" id="clear-chat-only">'
+        +       '<div class="dm-danger-card-icon"><i class="fas fa-eraser"></i></div>'
+        +       '<div class="dm-danger-card-body">'
+        +         '<div class="dm-danger-card-title">清除会话</div>'
+        +         '<div class="dm-danger-card-desc">删除本会话消息</div>'
+        +       '</div>'
+        +     '</button>'
+        +     '<button class="dm-danger-card dm-danger-card-red dm-danger-card-half" id="clear-storage">'
+        +       '<div class="dm-danger-card-icon"><i class="fas fa-skull-crossbones"></i></div>'
+        +       '<div class="dm-danger-card-body">'
+        +         '<div class="dm-danger-card-title">重置数据</div>'
+        +         '<div class="dm-danger-card-desc">清空所有，不可撤销</div>'
+        +       '</div>'
+        +     '</button>'
         +   '</div>'
 
         + '</div>' /* /dm-body */
+        ;
 
-        /* 全量备份抽屉 */
-        + '<div class="dm-action-drawer" id="dm-drawer-full">'
+    /* 抽屉 HTML 单独定义，将注入到 document.body 而非 modal-content，
+       避免 will-change:transform 层叠上下文导致 fixed 定位被困 */
+    var DRAWER_FULL_HTML =
+        '<div class="dm-action-drawer" id="dm-drawer-full">'
         +   '<div class="dm-drawer-backdrop" id="dm-drawer-full-backdrop"></div>'
         +   '<div class="dm-drawer-sheet">'
         +     '<div class="dm-drawer-handle"></div>'
@@ -133,10 +145,10 @@
         +     '</div>'
         +     '<button class="dm-drawer-cancel" id="dm-drawer-full-cancel">取消</button>'
         +   '</div>'
-        + '</div>'
+        + '</div>';
 
-        /* 聊天记录抽屉 */
-        + '<div class="dm-action-drawer" id="dm-drawer-chat">'
+    var DRAWER_CHAT_HTML =
+        '<div class="dm-action-drawer" id="dm-drawer-chat">'
         +   '<div class="dm-drawer-backdrop" id="dm-drawer-chat-backdrop"></div>'
         +   '<div class="dm-drawer-sheet">'
         +     '<div class="dm-drawer-handle"></div>'
@@ -168,9 +180,31 @@
             && mc.querySelector('.dm6-tabs') === null;
     }
 
+    /* 将抽屉注入 document.body，脱离 modal-content 的 will-change 层叠上下文，
+       确保 position:fixed 在 iOS Safari 等浏览器中能正确覆盖全屏 */
+    function ensureDrawersOnBody() {
+        var DRAWER_IDS = ['dm-drawer-full', 'dm-drawer-chat'];
+        DRAWER_IDS.forEach(function(id) {
+            var existing = document.getElementById(id);
+            // 若已在 body 直接子节点中则跳过
+            if (existing && existing.parentElement === document.body) return;
+            // 若在 modal 内则移到 body
+            if (existing) {
+                document.body.appendChild(existing);
+                return;
+            }
+            // 不存在则创建
+            var dummy = document.createElement('div');
+            if (id === 'dm-drawer-full') dummy.innerHTML = DRAWER_FULL_HTML;
+            else dummy.innerHTML = DRAWER_CHAT_HTML;
+            document.body.appendChild(dummy.firstElementChild);
+        });
+    }
+
     function writeHTML(mc) {
         mc.innerHTML = INNER_HTML;
         mc.dataset.dm6Built = 'v9'; // 阻止旧版 rebuild()
+        ensureDrawersOnBody();
         bindAll(mc);
     }
 
@@ -178,6 +212,7 @@
         if (!mc) return;
         mc.dataset.dm6Built = 'v9'; // 先打标记，再检查
         if (!isCorrect(mc)) writeHTML(mc);
+        else ensureDrawersOnBody(); // HTML 已正确但抽屉可能还在 modal 内
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -346,6 +381,18 @@
             });
         }
 
+        /* clear-chat-only */
+        var clearChatBtn = mc.querySelector('#clear-chat-only');
+        if (clearChatBtn) clearChatBtn.addEventListener('click', function () {
+            if (!confirm('确定要清除当前会话的所有消息吗？\n\n所有设置、头像、字卡等数据将保留，仅聊天记录会被删除。\n\n此操作无法恢复！')) return;
+            if (typeof messages !== 'undefined') {
+                window.messages = [];
+                if (typeof throttledSaveData === 'function') throttledSaveData();
+                if (typeof renderMessages === 'function') renderMessages();
+            }
+            if (typeof showNotification === 'function') showNotification('聊天记录已清除', 'success');
+        });
+
         /* clear-storage */
         var clearBtn = mc.querySelector('#clear-storage');
         if (clearBtn) clearBtn.addEventListener('click', function () {
@@ -437,6 +484,10 @@
         }, 60);
     }
 
+    // Bug Fix: MutationObserver 改为单例模式，防止每次 init() 调用时堆积新的 Observer
+    var _styleObserver = null;
+    var _contentObserver = null;
+
     function init() {
         var modal = document.getElementById('data-modal');
         if (!modal) return;
@@ -445,21 +496,27 @@
         var mc = modal.querySelector('.modal-content');
         if (mc) mc.dataset.dm6Built = 'v9';
 
+        /* 断开旧的 Observer，防止重复堆积 */
+        if (_styleObserver) { _styleObserver.disconnect(); _styleObserver = null; }
+        if (_contentObserver) { _contentObserver.disconnect(); _contentObserver = null; }
+
         /* 观察 modal 的 style 变化（显示/隐藏） */
-        new MutationObserver(function () {
+        _styleObserver = new MutationObserver(function () {
             var d = modal.style.display;
             if (d === 'flex' || d === 'block') onModalOpen(modal);
-        }).observe(modal, { attributes: true, attributeFilter: ['style'] });
+        });
+        _styleObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
 
         /* 观察 modal-content 的子节点变化（防止 rebuild 替换内容） */
         if (mc) {
-            new MutationObserver(function () {
+            _contentObserver = new MutationObserver(function () {
                 var mc2 = modal.querySelector('.modal-content');
                 if (mc2 && !isCorrect(mc2)) {
                     mc2.dataset.dm6Built = 'v9';
                     writeHTML(mc2);
                 }
-            }).observe(mc, { childList: true, subtree: false });
+            });
+            _contentObserver.observe(mc, { childList: true, subtree: false });
         }
     }
 

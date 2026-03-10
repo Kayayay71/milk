@@ -245,18 +245,18 @@ const loadData = async () => {
         const savedMyStickers = getVal(17);
         const savedReplyGroups = getVal(18);
 
-        if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas; 
-
-        if (savedShowNameConfig !== null) {
-            showPartnerNameInChat = savedShowNameConfig;
-            document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
-        }
+        if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas;
 
         if (savedSettings) Object.assign(settings, savedSettings);
+
+        // Bug Fix: 合并 showPartnerNameInChat 的两次赋值，优先使用 settings 中的值（后加载、更新），
+        // 若 settings 中未定义再回退到独立存储的 savedShowNameConfig
         if (settings.showPartnerNameInChat !== undefined) {
             showPartnerNameInChat = settings.showPartnerNameInChat;
-            document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
+        } else if (savedShowNameConfig !== null) {
+            showPartnerNameInChat = savedShowNameConfig;
         }
+        document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
         try {
             if (settings.customFontUrl) applyCustomFont(settings.customFontUrl);
             if (settings.customBubbleCss) applyCustomBubbleCss(settings.customBubbleCss);
@@ -343,6 +343,10 @@ const loadData = async () => {
             manageAutoSendTimer(); 
             checkEnvelopeStatus(); 
             updateUI();
+            // Re-apply bubble CSS last so its specificity boost wins over updateUI's setProperty calls
+            if (settings.customBubbleCss) {
+                try { applyCustomBubbleCss(settings.customBubbleCss); } catch(e) {}
+            }
         }, 100);
 
     } catch (e) {
@@ -886,6 +890,21 @@ function manageAutoSendTimer() {
                     return;
                 }
 
+                if (msg.type === 'call-event') {
+                    const callEvDiv = document.createElement('div');
+                    callEvDiv.className = 'call-event-message';
+                    callEvDiv.dataset.id = msg.id;
+                    const icon = msg.callIcon || 'fa-video';
+                    const isEnded = icon === 'fa-video';
+                    const isRejected = icon === 'fa-phone-slash';
+                    const colorClass = isRejected ? 'call-event-pill--rejected' : 'call-event-pill--ended';
+                    const detail = msg.callDetail ? `<span class="call-event-detail">${msg.callDetail}</span>` : '';
+                    callEvDiv.innerHTML = `<div class="call-event-pill ${colorClass}"><i class="fas ${icon} call-event-icon"></i><span class="call-event-label">${msg.text.replace(/ · .*/, '')}</span>${detail}<button class="call-event-delete" title="删除" onclick="(function(btn){const id=btn.closest('[data-id]').dataset.id;const idx=messages.findIndex(m=>String(m.id)===String(id));if(idx>-1){messages.splice(idx,1);renderMessages();throttledSaveData();}})(this)"><i class="fas fa-times"></i></button></div>`;
+                    fragment.appendChild(callEvDiv);
+                    lastSender = 'system';
+                    return;
+                }
+
                 let showTimestamp = true;
                 if (settings.timeFormat === 'off') {
                     showTimestamp = false;
@@ -1096,6 +1115,22 @@ actionsHTML += `<button class="meta-action-btn delete-btn" title="删除"><i cla
             throttledSaveData();
         };
 
+        // Expose call-event helper for call.js (excluded from word cloud, styled differently)
+        window._addCallEvent = (icon, label, detail) => {
+            addMessage({
+                id: Date.now() + Math.random(),
+                sender: 'system',
+                text: label + (detail ? ' · ' + detail : ''),
+                timestamp: new Date(),
+                status: 'received',
+                type: 'call-event',
+                callIcon: icon || 'fa-video',
+                callDetail: detail || null,
+                favorited: false,
+                note: null,
+            });
+        };
+
         function optimizeImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 if (file.size < 300 * 1024) {
@@ -1194,7 +1229,8 @@ if (!isBatchMode && type === 'normal') {
     // Determine read-no-reply FIRST, before showing any typing indicator
     const shouldIgnore = settings.allowReadNoReply && (Math.random() < 0.5);
 
-    // Mark messages as read after short delay (always happens — that's the "read" part)
+    // Mark messages as read after a more human-like delay (1.5 ~ 4 seconds)
+    const readDelay = 1500 + Math.random() * 2500;
     setTimeout(() => {
         let changed = false;
         messages.forEach(msg => {
@@ -1204,7 +1240,7 @@ if (!isBatchMode && type === 'normal') {
             }
         });
         if (changed) { renderMessages(false); throttledSaveData(); }
-    }, 400);
+    }, readDelay);
 
     // Cancel any pending reply timer and reset it (so rapid messages don't stack replies)
     if (window._pendingReplyTimer) clearTimeout(window._pendingReplyTimer);
@@ -1458,12 +1494,12 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                     const replyPool = customReplies.filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r));
                     const replyText = replyPool[Math.floor(Math.random() * replyPool.length)];
 
-                    // Bug fix 2: 30% chance partner sends a sticker image instead of (or after) text
+                    // Sticker and emoji now have the same independent probability (~30%)
                     const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.3;
 
                     let finalText = replyText;
                     let separateEmoji = null;
-                    if (!shouldSendSticker && customEmojis && customEmojis.length > 0 && Math.random() < 0.3) {
+                    if (customEmojis && customEmojis.length > 0 && Math.random() < 0.3) {
                         const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
                         if (settings.emojiMixEnabled !== false) {
                             finalText = Math.random() < 0.5
