@@ -577,12 +577,6 @@ console.log('window.sb save', error);
 
 };
 
-const throttledSaveData = () => {
-
-    saveData();
-
-};
-
 function initializeRandomUI() {
 
             document.querySelector('.header-motto').textContent = getRandomItem(CONSTANTS.HEADER_MOTTOS);
