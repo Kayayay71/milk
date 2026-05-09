@@ -557,9 +557,9 @@ await supabase
 
       data: {
 
-        messages: chatMessages,
+        messages,
 
-        settings: chatSettings
+        settings
 
       }
 
