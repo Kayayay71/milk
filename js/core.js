@@ -1,5 +1,5 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
-supabase = window.supabase.createClient(
+window.sb = window.supabase.createClient(
 
     'https://bnweilrwgxjtadmgpqtm.supabase.co/rest/v1/',
 
@@ -213,7 +213,7 @@ autoSendInterval: 5,
 const loadData = async () => {
     try {
         settings = getDefaultSettings();
-        const { data } = await supabase.from('notes') .select('*') .eq('id', SESSION_ID).single();
+        const { data } = await sb.from('notes') .select('*') .eq('id', SESSION_ID).single();
            if (data?.data) { 
                    messages = data.data.messages || [];
                    Object.assign(settings, data.data.settings || {});
