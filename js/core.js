@@ -1,7 +1,7 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
-window.sb = window.supabase.createClient(
+window.sb = window.window.sb.createClient(
 
-    'https://bnweilrwgxjtadmgpqtm.supabase.co',
+    'https://bnweilrwgxjtadmgpqtm.window.sb.co',
 
     'sb_publishable_GCN4q5ozLGBnTOEQuTECiQ_meURfLMo'
 
@@ -551,7 +551,7 @@ const saveData = async () => {
 
     _backupCriticalData();
 
-const { error } = await supabase
+const { error } = await window.sb
 
     .from('notes')
 
@@ -573,7 +573,7 @@ const { error } = await supabase
 
     ]);
 
-console.log('supabase save', error);
+console.log('window.sb save', error);
         };
         function initializeRandomUI() {
 
