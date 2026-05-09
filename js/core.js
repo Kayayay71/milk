@@ -572,6 +572,7 @@ const { error } = await window.sb
         }
 
     ]);
+console.log('messages length', messages.length);
 
 console.log('window.sb save', error);
 
