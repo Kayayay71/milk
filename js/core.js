@@ -222,6 +222,8 @@ const loadData = async () => {
     .eq('id', SESSION_ID)
 
     .maybeSingle();
+
+        console.log('LOAD SESSION_ID', SESSION_ID);
            if (data?.data) { 
                    messages = data.data.messages || [];
                    Object.assign(settings, data.data.settings || {});
