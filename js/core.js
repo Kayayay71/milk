@@ -1,5 +1,5 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
-const supabase = window.supabase.createClient(
+supabase = window.supabase.createClient(
 
     'https://bnweilrwgxjtadmgpqtm.supabase.co/rest/v1/',
 
