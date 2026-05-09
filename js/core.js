@@ -561,18 +561,15 @@ const { error } = await window.sb
 
             id: SESSION_ID,
 
-            data: {
+            data: JSON.parse(JSON.stringify({
 
                 messages,
 
-                settings
+       settings
 
-            }
+            }))
 
         }
-
-    ]);
-
 console.log('window.sb save', error);
         };
         function initializeRandomUI() {
