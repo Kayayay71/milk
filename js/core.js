@@ -549,7 +549,7 @@ const saveData = async () => {
         console.warn(`[saveData] ${failed.length} 项写入失败，已触发 localStorage 降级备份`, failed);
     }
 
-    _backupCriticalData();
+   _backupCriticalData();
 
 const { error } = await window.sb
 
@@ -565,13 +565,23 @@ const { error } = await window.sb
 
                 messages,
 
-       settings
+                settings
 
             }))
 
         }
+
+    ]);
+
 console.log('window.sb save', error);
-        };
+
+};
+
+const throttledSaveData = () => {
+
+    saveData();
+
+};
         function initializeRandomUI() {
 
 
