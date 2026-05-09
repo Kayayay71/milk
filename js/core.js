@@ -581,7 +581,7 @@ const { error } = await window.sb
 
     ]);
 console.log('messages length', messages.length);
-
+console.log('SESSION_ID', SESSION_ID);
 console.log('window.sb save', error);
 
 };
