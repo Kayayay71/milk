@@ -545,27 +545,29 @@ const saveData = async () => {
 
     _backupCriticalData();
 
-await supabase
+const { error } = await supabase
 
-  .from('notes')
+    .from('notes')
 
-  .upsert([
+    .upsert([
 
-    {
+        {
 
-      id: SESSION_ID,
+            id: SESSION_ID,
 
-      data: {
+            data: {
 
-        messages,
+                messages,
 
-        settings
+                settings
 
-      }
+            }
 
-    }
+        }
 
-  ]);
+    ]);
+
+console.log('supabase save', error);
         };
         function initializeRandomUI() {
 
