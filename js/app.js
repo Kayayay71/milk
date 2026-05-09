@@ -1,6 +1,3 @@
-const supabaseUrl = 'https://bnweilrwgxjtadmgpqtm.supabase.co'
-const supabaseKey = 'sb_publishable_GCN4q5ozLGBnTOEQuTECiQ_meURfLMo'
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
 document.addEventListener('DOMContentLoaded', async () => {
     const loaderBar = document.getElementById('loader-tech-bar');
     const welcomeSubtitle = document.querySelector('.welcome-subtitle-scramble');
