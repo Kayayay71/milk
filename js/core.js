@@ -305,7 +305,7 @@ const loadData = async () => {
             }));
         } else {
             const backup = _tryRecoverFromBackup();
-            if (false && Array.isArray(backup.messages) && backup.messages.length > 0) {
+            if (backup && Array.isArray(backup.messages) && backup.messages.length > 0) {
                 const timeSince = Math.round((Date.now() - backup.ts) / 60000);
                 console.warn(`[loadData] 主存储无消息，正在从备份恢复（备份时间：${timeSince} 分钟前）`);
                 messages = backup.messages.map(m => ({
