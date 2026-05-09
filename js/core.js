@@ -582,10 +582,6 @@ const { error } = await window.sb
         }
 
     ]);
-console.log('messages length', messages.length);
-console.log('SESSION_ID', SESSION_ID);
-console.log('window.sb save', error);
-
 };
 
 function initializeRandomUI() {
@@ -1959,13 +1955,35 @@ if (customStatuses && customStatuses.length > 0) {
             }
         }
 async function initializeSession() {
-    
+
     await migrateData();
 
-   sessionList = [{ id: 'global-chat' }];
+    const sessionsData = await localforage.getItem(`${APP_PREFIX}sessionList`);
 
-SESSION_ID = 'global-chat';
+    sessionList = sessionsData || [];
+
+    const hash = window.location.hash.substring(1);
+
+    if (hash && sessionList.some(s => s.id === hash)) {
+
+        SESSION_ID = hash;
+
+    } else if (sessionList.length > 0) {
+
+        const lastId = await localforage.getItem(`${APP_PREFIX}lastSessionId`);
+
+        SESSION_ID = lastId && sessionList.some(s => s.id === lastId)
+
+            ? lastId
+
+            : sessionList[0].id;
+
+    } else {
+
+        SESSION_ID = await createNewSession(false);
+
+    }
 
     await localforage.setItem(`${APP_PREFIX}lastSessionId`, SESSION_ID);
-}
 
+}
