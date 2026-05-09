@@ -1,5 +1,11 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
+const supabase = window.supabase.createClient(
 
+    'https://bnweilrwgxjtadmgpqtm.supabase.co/rest/v1/',
+
+    'sb_publishable_GCN4q5ozLGBnTOEQuTECiQ_meURfLMo'
+
+);
         function clearAllAppData() {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
