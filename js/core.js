@@ -207,7 +207,11 @@ autoSendInterval: 5,
 const loadData = async () => {
     try {
         settings = getDefaultSettings();
-        
+        const { data } = await supabase.from('notes') .select('*') .eq('id', SESSION_ID).single();
+           if (data?.data) { 
+                   messages = data.data.messages || [];
+                   Object.assign(settings, data.data.settings || {});
+}
         const results = await Promise.allSettled([
             localforage.getItem(getStorageKey('chatSettings')),
             localforage.getItem(getStorageKey('chatMessages')),
@@ -540,6 +544,7 @@ const saveData = async () => {
     }
 
     _backupCriticalData();
+        await supabase  .from('notes') .upsert([{ id: SESSION_ID, data: {  messages, settings   }]);
 };
 
         function initializeRandomUI() {
