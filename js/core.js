@@ -549,7 +549,7 @@ const saveData = async () => {
         console.warn(`[saveData] ${failed.length} 项写入失败，已触发 localStorage 降级备份`, failed);
     }
 
-   _backupCriticalData();
+_backupCriticalData();
 
 const { error } = await window.sb
 
@@ -582,8 +582,8 @@ const throttledSaveData = () => {
     saveData();
 
 };
-        function initializeRandomUI() {
 
+function initializeRandomUI() {
 
             document.querySelector('.header-motto').textContent = getRandomItem(CONSTANTS.HEADER_MOTTOS);
 if (customMottos && customMottos.length > 0) {
