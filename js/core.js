@@ -1,7 +1,7 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
 window.sb = supabase.createClient(
 
-    'https://bnweilrwgxjtadmgpqtm.window.sb.co',
+    'https://bnweilrwgxjtadmgpqtm.supabase.co',
 
     'sb_publishable_GCN4q5ozLGBnTOEQuTECiQ_meURfLMo'
 
