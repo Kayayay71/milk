@@ -1952,18 +1952,9 @@ async function initializeSession() {
     
     await migrateData();
 
-    const sessionsData = await localforage.getItem(`${APP_PREFIX}sessionList`);
-    sessionList = sessionsData || [];
+   sessionList = [{ id: 'global-chat' }];
 
-    const hash = window.location.hash.substring(1);
-    if (hash && sessionList.some(s => s.id === hash)) {
-        SESSION_ID = hash;
-    } else if (sessionList.length > 0) {
-        const lastId = await localforage.getItem(`${APP_PREFIX}lastSessionId`);
-        SESSION_ID = lastId && sessionList.some(s => s.id === lastId) ? lastId : sessionList[0].id;
-    } else {
-        SESSION_ID = await createNewSession(false);
-    }
+SESSION_ID = 'global-chat';
 
     await localforage.setItem(`${APP_PREFIX}lastSessionId`, SESSION_ID);
 }
