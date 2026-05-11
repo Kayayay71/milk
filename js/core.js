@@ -1,11 +1,5 @@
 /*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
-window.sb = supabase.createClient(
 
-    'https://bnweilrwgxjtadmgpqtm.supabase.co',
-
-    'sb_publishable_GCN4q5ozLGBnTOEQuTECiQ_meURfLMo'
-
-);
         function clearAllAppData() {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
@@ -213,21 +207,7 @@ autoSendInterval: 5,
 const loadData = async () => {
     try {
         settings = getDefaultSettings();
-       const { data } = await window.sb
-
-    .from('notes')
-
-    .select('*')
-
-    .eq('id', SESSION_ID)
-
-    .maybeSingle();
-
-        console.log('LOAD SESSION_ID', SESSION_ID);
-           if (data?.data) { 
-                   messages = data.data.messages || [];
-                   Object.assign(settings, data.data.settings || {});
-}
+        
         const results = await Promise.allSettled([
             localforage.getItem(getStorageKey('chatSettings')),
             localforage.getItem(getStorageKey('chatMessages')),
@@ -559,32 +539,11 @@ const saveData = async () => {
         console.warn(`[saveData] ${failed.length} 项写入失败，已触发 localStorage 降级备份`, failed);
     }
 
-_backupCriticalData();
-
-const { error } = await window.sb
-
-    .from('notes')
-
-    .upsert([
-
-        {
-
-            id: SESSION_ID,
-
-            data: JSON.parse(JSON.stringify({
-
-                messages,
-
-                settings
-
-            }))
-
-        }
-
-    ]);
+    _backupCriticalData();
 };
 
-function initializeRandomUI() {
+        function initializeRandomUI() {
+
 
             document.querySelector('.header-motto').textContent = getRandomItem(CONSTANTS.HEADER_MOTTOS);
 if (customMottos && customMottos.length > 0) {
@@ -1955,35 +1914,21 @@ if (customStatuses && customStatuses.length > 0) {
             }
         }
 async function initializeSession() {
-
+    
     await migrateData();
 
     const sessionsData = await localforage.getItem(`${APP_PREFIX}sessionList`);
-
     sessionList = sessionsData || [];
 
     const hash = window.location.hash.substring(1);
-
     if (hash && sessionList.some(s => s.id === hash)) {
-
         SESSION_ID = hash;
-
     } else if (sessionList.length > 0) {
-
         const lastId = await localforage.getItem(`${APP_PREFIX}lastSessionId`);
-
-        SESSION_ID = lastId && sessionList.some(s => s.id === lastId)
-
-            ? lastId
-
-            : sessionList[0].id;
-
+        SESSION_ID = lastId && sessionList.some(s => s.id === lastId) ? lastId : sessionList[0].id;
     } else {
-
         SESSION_ID = await createNewSession(false);
-
     }
 
     await localforage.setItem(`${APP_PREFIX}lastSessionId`, SESSION_ID);
-
 }
